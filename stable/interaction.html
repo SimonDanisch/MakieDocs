@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Interaction · Plotting in pure Julia</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Plotting in pure Julia</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Home</a></li><li><span class="toctext">Basics</span><ul><li><a class="toctext" href="scene.html">Scene</a></li><li><a class="toctext" href="conversions.html">Conversions</a></li><li><a class="toctext" href="functions.html">Functions</a></li><li><a class="toctext" href="documentation.html">Documentation</a></li><li><a class="toctext" href="backends.html">Backends</a></li><li><a class="toctext" href="extending.html">Extending</a></li><li><a class="toctext" href="themes.html">Themes</a></li><li class="current"><a class="toctext" href="interaction.html">Interaction</a><ul class="internal"><li><a class="toctext" href="#Soon-to-be-implemented-1">Soon to be implemented</a></li></ul></li><li><a class="toctext" href="axis.html">Axis</a></li><li><a class="toctext" href="legends.html">Legends</a></li><li><a class="toctext" href="output.html">Input Output</a></li><li><a class="toctext" href="reflection.html">Reflection</a></li><li><a class="toctext" href="layout.html">Layouting</a></li></ul></li><li><span class="toctext">Developper Documentation</span><ul><li><a class="toctext" href="devdocs.html">Devdocs</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>Basics</li><li><a href="interaction.html">Interaction</a></li></ul><a class="edit-page" href="https://github.com/SimonDanisch/Makie.jl/blob/master/docs\\src\\interaction.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Interaction</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Interaction-1" href="#Interaction-1">Interaction</a></h1><p>Makie offers a sophisticated referencing system to share attributes across the Scene in your plot. This is great for animations and saving resources - also if the backend decides to put data on the GPU you might even share those in GPU memory.</p><h3><a class="nav-anchor" id="Using-Mouse-and-Time-to-animate-plots-1" href="#Using-Mouse-and-Time-to-animate-plots-1">Using Mouse and Time to animate plots</a></h3><p>The simples form is just to use getindex into a scene, which returns a life node! Which means, if you do anything with that node, your resulting data will also be life! <code>lift_node</code> creates a new node from a list of input nodes, which updates every time any  of the inputs updates.</p><pre><code class="language-">using Makie
+
+scene = Scene(resolution = (500, 500))
+
+f(t, v, s) = (sin(v + t) * s, cos(v + t) * s)
+
+p1 = scatter(lift_node(t-&gt; f.(t, linspace(0, 2pi, 50), 1), scene[:time]))
+p2 = scatter(lift_node(t-&gt; f.(t * 2.0, linspace(0, 2pi, 50), 1.5), scene[:time]))
+center!(scene)
+nothing
+# you can now reference to life attributes from the above plots:
+
+lines = lift_node(p1[:positions], p2[:positions]) do pos1, pos2
+    map((a, b)-&gt; (a, b), pos1, pos2)
+end
+
+linesegment(lines)
+
+center!(scene)
+# record a video 
+io = VideoStream(scene, &quot;.&quot;, &quot;interaction&quot;)
+for i = 1:300
+    recordframe!(io)
+    yield()
+    sleep(1/30)
+end
+finish(io, &quot;mp4&quot;) # could also be gif, webm or mkv
+nothing</code></pre><video controls autoplay>
+  <source src="interaction.mp4" type="video/mp4">
+  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.
+</video><h3><a class="nav-anchor" id="@ref-1" href="#@ref-1"><code>@ref</code></a></h3><p>Is just syntactic sugar for accessing a key in a scene. It might actually get deprecated, since just accessing the scene directly is convenient enough!</p><p>@ref Variable = Value # Inserts Value under name Variable into Scene</p><p>@ref Scene.Name1.Name2 # Syntactic sugar for <code>Scene[:Name1, :Name2]</code> @ref Expr1, Expr1 # Syntactic sugar for <code>(@ref Expr1, @ref Expr2)</code></p><h2><a class="nav-anchor" id="Soon-to-be-implemented-1" href="#Soon-to-be-implemented-1">Soon to be implemented</a></h2><h3><a class="nav-anchor" id="Animating-and-sharing-on-the-GPU-1" href="#Animating-and-sharing-on-the-GPU-1">Animating and sharing on the GPU</a></h3><pre><code class="language-Julia">using Makie
+
+scene = Scene(resolution = (500, 500))
+@ref A = rand(32, 32) # if uploaded to the GPU, it will be shared on the GPU
+
+surface(@ref A) # refer to exactly the same a in wireframe and surface plot
+wireframe((@ref A) .+ 0.5) # offsets A on the GPU based on the same data
+
+for i = 1:10
+    # updates A - resulting in an animation of the surface and offsetted wireframe plot
+    @ref A[:, :] = rand(32, 32)
+end</code></pre><h3><a class="nav-anchor" id="Simple-GUI-1" href="#Simple-GUI-1">Simple GUI</a></h3><pre><code class="language-Julia">using Makie
+
+scene = Scene()
+@ref slicer1 = slider(linspace(0, 1, 100)) # create a slider
+
+# generate some pretty data
+function xy_data(x,y,i)
+    x = (x - 0.5f0) * i
+    y = (y - 0.5f0) * i
+    r = sqrt(x * x + y * y)
+    Float32(sin(r) / r)
+end
+
+surf(i, N) = Float32[xy_data(x, y, i, N) for x = linspace(0, 1, N), y = linspace(0, 1, N)]
+
+surface(surf.(@ref slicer1, 512)) # refer to exactly the same a in wireframe and surface plot
+</code></pre><footer><hr/><a class="previous" href="themes.html"><span class="direction">Previous</span><span class="title">Themes</span></a><a class="next" href="axis.html"><span class="direction">Next</span><span class="title">Axis</span></a></footer></article></body></html>

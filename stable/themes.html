@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Themes · Plotting in pure Julia</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Plotting in pure Julia</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Home</a></li><li><span class="toctext">Basics</span><ul><li><a class="toctext" href="scene.html">Scene</a></li><li><a class="toctext" href="conversions.html">Conversions</a></li><li><a class="toctext" href="functions.html">Functions</a></li><li><a class="toctext" href="documentation.html">Documentation</a></li><li><a class="toctext" href="backends.html">Backends</a></li><li><a class="toctext" href="extending.html">Extending</a></li><li class="current"><a class="toctext" href="themes.html">Themes</a><ul class="internal"></ul></li><li><a class="toctext" href="interaction.html">Interaction</a></li><li><a class="toctext" href="axis.html">Axis</a></li><li><a class="toctext" href="legends.html">Legends</a></li><li><a class="toctext" href="output.html">Input Output</a></li><li><a class="toctext" href="reflection.html">Reflection</a></li><li><a class="toctext" href="layout.html">Layouting</a></li></ul></li><li><span class="toctext">Developper Documentation</span><ul><li><a class="toctext" href="devdocs.html">Devdocs</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>Basics</li><li><a href="themes.html">Themes</a></li></ul><a class="edit-page" href="https://github.com/SimonDanisch/Makie.jl/blob/master/docs\\src\\themes.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Themes</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Themes-1" href="#Themes-1">Themes</a></h1><p>It&#39;s pretty easy and interactive to change the current theme.</p><div><pre><code class="language-julia">using Makie, GeometryTypes, Colors, MacroTools
+scene = Scene()
+vx = -1:0.1:1;
+vy = -1:0.1:1;
+
+f(x, y) = (sin(x*10) + cos(y*10)) / 4
+psurf = surface(vx, vy, f)
+
+pos = lift_node(psurf[:x], psurf[:y], psurf[:z]) do x, y, z
+    vec(Point3f0.(x, y&#39;, z .+ 0.5))
+end
+pscat = scatter(pos)
+plines = lines(view(pos, 1:2:length(pos)))
+center!(scene)</code></pre></div><p><img src="theming_plot1.png" alt/></p><p>Now, the first simple way of theming your plots/applying a series of attributes goes like this:</p><div><pre><code class="language-julia">@theme theme = begin
+    markersize = to_markersize2d(0.01)
+    strokecolor = to_color(:white)
+    strokewidth = to_float(0.01)
+end
+
+# this pushes all the values from theme to the plot
+
+push!(pscat, theme)</code></pre></div><p><img src="theming_plot2.png" alt/></p><p>Other ways to update the values with a theme snippet:</p><pre><code class="language-julia"># Update the entire surface node with this
+scene[:scatter] = theme
+# Or permananently (to be more precise: just for this session) change the theme for scatter
+scene[:theme, :scatter] = theme
+scatter(lift_node(x-&gt; x .+ (Point3f0(0, 0, 1),), pos)) # will now use new theme</code></pre><div><pre><code class="language-julia"># Make a completely new theme
+function custom_theme(scene)
+    @theme theme = begin
+        linewidth = to_float(3)
+        colormap = to_colormap(:RdPu)
+        scatter = begin
+            marker = to_spritemarker(Circle)
+            markersize = to_float(0.03)
+            strokecolor = to_color(:white)
+            strokewidth = to_float(0.01)
+            glowcolor = to_color(RGBA(0, 0, 0, 0.4))
+            glowwidth = to_float(0.1)
+        end
+    end
+    # update theme values
+    scene[:theme] = theme
+end
+
+# apply it to the scene
+custom_theme(scene)
+
+# From now everything will be plotted with new theme
+psurf = surface(vx, 1:0.1:2, psurf[:z])
+center!(scene)</code></pre></div><p><img src="theming_plot3.png" alt/></p><footer><hr/><a class="previous" href="extending.html"><span class="direction">Previous</span><span class="title">Extending</span></a><a class="next" href="interaction.html"><span class="direction">Next</span><span class="title">Interaction</span></a></footer></article></body></html>

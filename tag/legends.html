@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Legends · Plotting in pure Julia</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Plotting in pure Julia</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Home</a></li><li><span class="toctext">Basics</span><ul><li><a class="toctext" href="scene.html">Scene</a></li><li><a class="toctext" href="conversions.html">Conversions</a></li><li><a class="toctext" href="functions.html">Functions</a></li><li><a class="toctext" href="documentation.html">Documentation</a></li><li><a class="toctext" href="backends.html">Backends</a></li><li><a class="toctext" href="extending.html">Extending</a></li><li><a class="toctext" href="themes.html">Themes</a></li><li><a class="toctext" href="interaction.html">Interaction</a></li><li><a class="toctext" href="axis.html">Axis</a></li><li class="current"><a class="toctext" href="legends.html">Legends</a><ul class="internal"></ul></li><li><a class="toctext" href="output.html">Input Output</a></li><li><a class="toctext" href="reflection.html">Reflection</a></li><li><a class="toctext" href="layout.html">Layouting</a></li></ul></li><li><span class="toctext">Developper Documentation</span><ul><li><a class="toctext" href="devdocs.html">Devdocs</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>Basics</li><li><a href="legends.html">Legends</a></li></ul><a class="edit-page" href="https://github.com/SimonDanisch/Makie.jl/blob/master/docs\\src\\legends.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Legends</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Legends-1" href="#Legends-1">Legends</a></h1><p>The Legend is an interactive object, that can be edited and interacted with like any other object in Makie.</p><p>You can create it on your own, or let it get created by automatically by a <code>plot</code> command.</p><div><pre><code class="language-julia">using Makie, GeometryTypes, Colors
+
+# Create some plots for which we want to generate a legend
+scene = Scene()
+plots = map([:dot, :dash, :dashdot], [2, 3, 4]) do ls, lw
+    linesegment(linspace(1, 5, 100), rand(100), rand(100), linestyle = ls, linewidth = lw)
+end
+push!(plots, scatter(linspace(1, 5, 100), rand(100), rand(100)))
+center!(scene)
+
+# plot a legend for the plots with an array of names
+l = Makie.legend(plots, [&quot;attribute $i&quot; for i in 1:4])
+io = VideoStream(scene, &quot;.&quot;, &quot;legend&quot;)
+record(io) = (for i = 1:35; recordframe!(io); sleep(1/30); end);
+
+record(io)
+# Change some attributes interactively
+l[:position] = (0.4, 0.7)
+record(io)
+l[:backgroundcolor] = RGBA(0.95, 0.95, 0.95)
+record(io)
+l[:strokecolor] = RGB(0.8, 0.8, 0.8)
+record(io)
+l[:gap] = 30
+record(io)
+l[:textsize] = 19
+record(io)
+l[:linepattern] = Point2f0[(0,-0.2), (0.5, 0.2), (0.5, 0.2), (1.0, -0.2)]
+record(io)
+l[:scatterpattern] = decompose(Point2f0, Circle(Point2f0(0.5, 0), 0.3f0), 9)
+record(io)
+l[:markersize] = 2f0
+record(io)
+finish(io, &quot;mp4&quot;)
+nothing</code></pre></div><video controls autoplay>
+  <source src="legend.mp4" type="video/mp4">
+  Your browser does not support mp4. Please use a modern browser like Chrome or Firefox.
+</video><footer><hr/><a class="previous" href="axis.html"><span class="direction">Previous</span><span class="title">Axis</span></a><a class="next" href="output.html"><span class="direction">Next</span><span class="title">Input Output</span></a></footer></article></body></html>
